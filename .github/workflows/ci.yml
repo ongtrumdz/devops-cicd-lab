@@ -1,0 +1,25 @@
+name: Lab 8.6 - First CI
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bash-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Check Bash syntax
+        run: bash -n scripts/check.sh
+
+      - name: Execute Bash test
+        run: |
+          result="$(bash scripts/check.sh)"
+          echo "$result"
+          test "$result" = "CI_OK"
