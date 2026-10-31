@@ -27,12 +27,31 @@ jobs:
 
       - name: Test website
         run: |
-          curl --fail --silent --show-error \
-            --retry 10 --retry-delay 1 --retry-connrefused \
-            http://127.0.0.1:8088/ \
-            | grep -Fq "DevOps CI Lab 8.7"
+          set -euo pipefail
 
-          echo "HTTP test PASSED!"
+          for i in $(seq 1 15); do
+            if curl -fsS --max-time 3 \
+              http://127.0.0.1:8088/ \
+              -o /tmp/index.html; then
+
+              if grep -Fq "DevOps CI Lab 8.7" /tmp/index.html; then
+                echo "HTTP test PASSED!"
+                exit 0
+              else
+                echo "ERROR: Website content is incorrect"
+                cat /tmp/index.html
+                exit 1
+              fi
+            fi
+
+            echo "Waiting for Nginx ($i/15)..."
+            sleep 2
+          done
+
+          echo "ERROR: Nginx did not become ready"
+          docker ps -a
+          docker logs web-ci
+          exit 1
 
       - name: Cleanup container
         if: always()
