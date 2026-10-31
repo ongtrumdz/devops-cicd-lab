@@ -1,0 +1,39 @@
+name: Lab 8.7 - Docker Build and Test
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t devops-cicd-lab:8.7 .
+
+      - name: Run Nginx container
+        run: |
+          docker run -d \
+            --name web-ci \
+            -p 127.0.0.1:8088:80 \
+            devops-cicd-lab:8.7
+
+      - name: Test website
+        run: |
+          curl --fail --silent --show-error \
+            --retry 10 --retry-delay 1 --retry-connrefused \
+            http://127.0.0.1:8088/ \
+            | grep -Fq "DevOps CI Lab 8.7"
+
+          echo "HTTP test PASSED!"
+
+      - name: Cleanup container
+        if: always()
+        run: docker rm -f web-ci || true
